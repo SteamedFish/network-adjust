@@ -70,7 +70,7 @@
 - 避免中断处理瓶颈
 - 提升中断响应速度
 
-**⚠️ NUMA 限制**：本脚本**未考虑 NUMA 拓扑结构**。在多路服务器上,IRQ 可能被分配到远程 NUMA 节点的 CPU,导致跨节点内存访问,造成 2-3 倍的延迟惩罚。对于 NUMA 感知优化,需要手动将 IRQ 绑定到网卡所在 NUMA 节点的本地 CPU（详见"已知限制"章节）。
+**⚠️ NUMA 限制**：详见"已知限制"章节 - IRQ、RPS、XPS 优化均未考虑 NUMA 拓扑结构。
 
 ### 4. RPS 优化 (Receive Packet Steering)
 
@@ -85,6 +85,8 @@
 - 充分利用所有 CPU 核心
 - 减少 CPU 空闲浪费
 
+**⚠️ NUMA 限制**：详见"注意事项"章节 - RPS 使用所有 CPU,不考虑 NUMA 拓扑。
+
 ### 5. XPS 优化 (Transmit Packet Steering)
 
 **原理**：与 RPS 类似，但针对发送端。
@@ -92,6 +94,8 @@
 **效果**：
 - 提高发送端并行度
 - 优化 cache 局部性
+
+**⚠️ NUMA 限制**：详见"注意事项"章节 - XPS 使用所有 CPU,不考虑 NUMA 拓扑。
 
 ### 6. RFS 优化 (Receive Flow Steering)
 
@@ -580,11 +584,21 @@ sudo ethtool -L eth0 combined <原始队列数>
 
 6. **未考虑 NUMA 亲和性** ⚠️
    - **多路服务器上的关键限制**
-   - 脚本使用简单的轮询方式将 IRQ 分配到所有 CPU
+   - **受影响的优化项**：IRQ 亲和性、RPS、XPS（均使用轮询方式将工作分配到所有 CPU）
    - **不尊重 NUMA 节点边界**
-   - **影响**：在 NUMA 系统上,IRQ 可能被分配到远程 CPU,造成 2-3 倍延迟惩罚
-   - **受影响系统**：多路服务器(2+ CPU),AMD EPYC、Intel Xeon 多路配置
-   - **临时解决方案**：手动检查网卡的 NUMA 节点（`cat /sys/class/net/eth0/device/numa_node`）,仅将 IRQ 绑定到本地 CPU
+   - **影响**：在 NUMA 系统上,网络处理可能发生在远程 CPU 上,导致：
+     - 内存访问延迟增加 2-3 倍
+     - 跨节点流量导致吞吐量下降
+     - 缓存效率低下,CPU 开销增加
+   - **受影响系统**：多路服务器(2+ CPU),AMD EPYC、Intel Xeon 多路配置,任何具有多个 NUMA 节点的系统
+   - **临时解决方案**：手动检查网卡的 NUMA 节点并将 IRQ/RPS/XPS 绑定到本地 CPU：
+     ```bash
+     # 检查网卡的 NUMA 节点
+     cat /sys/class/net/eth0/device/numa_node
+     # 获取本地 CPU
+     cat /sys/devices/system/node/node0/cpulist
+     # 仅将 IRQ/RPS/XPS 绑定到本地 CPU
+     ```
    - **推荐方案**：对于 NUMA 系统,使用 NUMA 感知的调优工具（如 `tuned`、`irqbalance --hintpolicy=subset`）
 
 ### 💡 最佳实践

@@ -841,6 +841,13 @@ _is_positive_integer() {
 # Unified RPS/XPS optimization logic
 # mode: "check" (return 0/1), "apply" (output + modify)
 # direction: "rx" for RPS, "tx" for XPS
+#
+# LIMITATION: This function does NOT consider NUMA topology.
+# On multi-socket NUMA systems, this may distribute packets to CPUs on remote NUMA nodes,
+# causing cross-node memory access with 2-3× latency penalty.
+# Optimal: RPS/XPS should only use CPUs local to the NIC's NUMA node.
+# Check NIC's NUMA node: cat /sys/class/net/<dev>/device/numa_node
+# Get local CPUs: cat /sys/devices/system/node/node<N>/cpulist
 _optimize_packet_steering() {
 	local eth_name=$1
 	local mode=$2

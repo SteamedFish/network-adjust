@@ -70,7 +70,7 @@ A powerful Bash script for optimizing Linux physical network card performance pa
 - Avoid interrupt handling bottleneck
 - Improve interrupt response speed
 
-**⚠️ NUMA Limitation**: This script does NOT consider NUMA topology. On multi-socket servers, IRQs may be assigned to CPUs on remote NUMA nodes, causing cross-node memory access and 2-3× latency penalty. For NUMA-aware optimization, manually bind IRQs to CPUs local to the NIC's NUMA node (see "Known Limitations" section).
+**⚠️ NUMA Limitation**: See "Known Limitations" section - IRQ, RPS, and XPS optimizations do NOT consider NUMA topology.
 
 ### 4. RPS Optimization
 
@@ -85,6 +85,8 @@ A powerful Bash script for optimizing Linux physical network card performance pa
 - Fully utilize all CPU cores
 - Reduce CPU idle waste
 
+**⚠️ NUMA Limitation**: See "Important Notes" section - RPS uses all CPUs regardless of NUMA topology.
+
 ### 5. XPS Optimization
 
 **Principle**: Similar to RPS but for the transmit side.
@@ -92,6 +94,8 @@ A powerful Bash script for optimizing Linux physical network card performance pa
 **Effects**:
 - Improve transmit-side parallelism
 - Optimize cache locality
+
+**⚠️ NUMA Limitation**: See "Important Notes" section - XPS uses all CPUs regardless of NUMA topology.
 
 ### 6. RFS Optimization
 
@@ -580,11 +584,21 @@ sudo ethtool -L eth0 combined <original_queue_count>
 
 6. **NUMA Affinity Not Considered** ⚠️
    - **Critical limitation on multi-socket servers**
-   - Script uses simple round-robin IRQ distribution across ALL CPUs
+   - **Affected optimizations**: IRQ affinity, RPS, XPS (all use round-robin across ALL CPUs)
    - Does NOT respect NUMA node boundaries
-   - **Impact**: On NUMA systems, IRQs may be assigned to remote CPUs, causing 2-3× latency penalty
-   - **Affected systems**: Multi-socket servers (2+ CPUs), AMD EPYC, Intel Xeon multi-socket
-   - **Workaround**: Manually check NIC's NUMA node (`cat /sys/class/net/eth0/device/numa_node`) and bind IRQs to local CPUs only
+   - **Impact**: On NUMA systems, network processing may occur on remote CPUs, causing:
+     - 2-3× memory access latency penalty
+     - Reduced throughput due to cross-node traffic
+     - Cache inefficiency and increased CPU overhead
+   - **Affected systems**: Multi-socket servers (2+ CPUs), AMD EPYC, Intel Xeon multi-socket, any system with multiple NUMA nodes
+   - **Workaround**: Manually check NIC's NUMA node and bind IRQ/RPS/XPS to local CPUs:
+     ```bash
+     # Check NIC's NUMA node
+     cat /sys/class/net/eth0/device/numa_node
+     # Get local CPUs
+     cat /sys/devices/system/node/node0/cpulist
+     # Bind IRQ/RPS/XPS to local CPUs only
+     ```
    - **Recommendation**: For NUMA systems, use NUMA-aware tuning tools (e.g., `tuned`, `irqbalance --hintpolicy=subset`)
 
 ### 💡 Best Practices

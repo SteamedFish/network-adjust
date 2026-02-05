@@ -90,25 +90,37 @@ network-adjust/
 
 ### NUMA Affinity Not Considered
 
-**Critical Design Flaw**: The script's IRQ affinity optimization ignores NUMA topology (line 1058-1099).
+**Critical Design Flaw**: The script's CPU affinity optimizations (IRQ, RPS, XPS) ignore NUMA topology.
+
+**Affected Optimizations**:
+- **IRQ affinity** (line 1058-1099): Round-robin IRQ distribution via `queue % nr_cpu` (line 1074)
+- **RPS** (line 840-896): CPU mask generation via `generate_cpus_mask` (line 878)
+- **XPS** (line 840-896): Same CPU mask logic as RPS (line 878)
 
 **Current Behavior**:
-- Uses simple round-robin: `queue % nr_cpu` assigns each queue to a CPU (line 1074)
-- Distributes IRQs across ALL CPUs regardless of NUMA node
+- All three use simple round-robin: assigns queues/CPUs across ALL system CPUs
+- Distributes workload regardless of NUMA node boundaries
+- Uses same `generate_cpus_mask` function that spreads load evenly across all CPUs
 
 **Problem**:
 - Modern servers have multiple NUMA nodes (separate CPU + memory domains)
 - NICs are physically attached to ONE NUMA node via PCIe
-- IRQs assigned to remote NUMA nodes cause cross-node memory access
-- **Performance impact**: 2-3× latency penalty for remote memory access
+- Network buffers (SKBs) allocated on remote NUMA nodes cause cross-node memory access
+- **Performance impact**: 2-3× latency penalty, reduced throughput, cache inefficiency
 
 **Example**:
 ```
 Server: 2 NUMA nodes, 32 CPUs (16 per node)
 NIC: Plugged into NUMA node 0
-Current script: Assigns queues to CPU 0,1,2...31 (both nodes)
-Optimal: Should only use CPU 0-15 (local node)
+Current script: IRQ/RPS/XPS use CPU 0,1,2...31 (both nodes)
+Optimal: Should only use CPU 0-15 (local to NIC's NUMA node)
 ```
+
+**Technical Details**:
+- **IRQ**: Remote CPU handles interrupt → SKB allocated on remote memory
+- **RPS**: Remote CPU processes received packet → cross-node memory access
+- **XPS**: Remote CPU handles transmit → cross-node buffer access
+- All three multiply the cross-NUMA overhead
 
 **Workaround**:
 ```bash
@@ -120,11 +132,17 @@ cat /sys/devices/system/node/node0/cpulist
 
 # 3. Manually bind IRQs to local CPUs only
 echo <local_cpu_mask> > /proc/irq/<irq>/smp_affinity
+
+# 4. Manually set RPS to local CPUs only
+echo <local_cpu_mask> > /sys/class/net/eth0/queues/rx-0/rps_cpus
+
+# 5. Manually set XPS to local CPUs only
+echo <local_cpu_mask> > /sys/class/net/eth0/queues/tx-0/xps_cpus
 ```
 
 **Why Not Fixed**:
 - Requires `numactl` or parsing `/sys/devices/system/node/`
-- Complex topology handling (CPU hotplug, memory-only nodes)
+- Complex topology handling (CPU hotplug, memory-only nodes, node distances)
 - Original script predates common NUMA awareness
 - Adding this would break the "minimal dependencies" design goal
 
