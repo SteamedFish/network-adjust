@@ -31,6 +31,32 @@ A powerful Bash script for optimizing Linux physical network card performance pa
 - ❌ Latency-sensitive workloads (gaming servers, VoIP)
 - ❌ Scenarios where response time is more important than throughput
 
+## NUMA-Aware Variant (Experimental)
+
+A NUMA-aware version is available as `linux_ethernet_optimization_numa.sh`.
+
+**⚠️ WARNING: This variant is completely AI-generated and has NOT been tested in production.**
+
+This variant automatically detects each NIC's NUMA node and binds IRQ/RPS/XPS only to CPUs local to that node, avoiding cross-NUMA memory access penalties.
+
+**Key differences from original:**
+- Auto-detects NIC's NUMA node from `/sys/class/net/<dev>/device/numa_node`
+- Binds IRQ/RPS/XPS only to CPUs local to that NUMA node
+- Falls back to original round-robin behavior if NUMA detection fails
+- See script header for detailed warnings, testing recommendations, and known limitations
+
+**Recommended for:**
+- Multi-socket servers (2+ CPUs with separate NUMA domains)
+- Systems where NIC NUMA locality matters for performance
+- Users who can thoroughly test before production deployment
+
+**NOT recommended for:**
+- Single-socket systems (no NUMA benefit)
+- Production use without extensive testing
+- Users unfamiliar with NUMA topology
+
+See the script header comments for comprehensive testing procedures and known limitations.
+
 ## Features
 
 ### 1. Queue Optimization

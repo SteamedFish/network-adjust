@@ -150,6 +150,31 @@ echo <local_cpu_mask> > /sys/class/net/eth0/queues/tx-0/xps_cpus
 
 **Future**: Consider adding `-N` flag for NUMA-aware mode with `numactl` dependency.
 
+## NUMA-AWARE VARIANT
+
+**File**: `linux_ethernet_optimization_numa.sh`  
+**Status**: ⚠️ AI-generated, completely untested  
+**Size**: ~41KB (vs original 35KB)
+
+Experimental variant that addresses the NUMA limitation by:
+- Auto-detecting NIC's NUMA node from `/sys/class/net/<dev>/device/numa_node`
+- Binding IRQ/RPS/XPS to local CPUs only (via modified `generate_cpus_mask`, `_optimize_irq_affinity`, `_optimize_packet_steering`)
+- Falling back to round-robin if detection fails (with WARNING messages)
+
+**New functions**:
+- `get_nic_numa_node <dev>`: Returns NUMA node number or -1
+- `get_numa_node_cpus <node>`: Returns space-separated CPU list for node
+- `parse_cpu_list <cpulist>`: Parses "0-15,32-47" format into "0 1 2 ... 47"
+
+**Modified functions**:
+- `generate_cpus_mask`: Accepts optional `cpu_filter` parameter
+- `_optimize_irq_affinity`: Uses NUMA-local CPU array for round-robin
+- `_optimize_packet_steering`: Passes `local_cpus` filter to mask generation
+
+**DO NOT USE IN PRODUCTION WITHOUT THOROUGH TESTING.**
+
+See script header (lines 11-42) for comprehensive warnings, testing procedures, and known limitations.
+
 ## DEPENDENCIES
 
 **Hard requirements** (checked by `check_script_requirements`):
