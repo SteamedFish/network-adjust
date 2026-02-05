@@ -342,11 +342,11 @@ sudo nano /etc/systemd/network/10-eth.link
 MACAddress=xx:xx:xx:xx:xx:xx
 
 [Link]
-# 设置 Ringbuffer 大小（systemd v248+）
+# 设置 Ringbuffer 大小（systemd v246+）
 RxBufferSize=max
 TxBufferSize=max
 
-# 设置队列数量为最大值（systemd v248+）
+# 设置队列数量为最大值（systemd v246+）
 RxChannels=max
 TxChannels=max
 CombinedChannels=max
@@ -371,7 +371,7 @@ set_ethernet_rps_to_optimum <网卡名>
 set_ethernet_xps_to_optimum <网卡名>
 
 # 队列数量优化
-set_ethernet_queues_to_optimum <网卡名>
+set_ethernet_queue_to_optimum <网卡名>
 
 # Ringbuffer 优化
 set_ethernet_ringbuffer_to_optimum <网卡名>
@@ -707,8 +707,7 @@ linux_ethernet_optimization.sh
 ├── 基础工具函数
 │   ├── _sysfs_read()
 │   ├── _sysfs_write()
-│   ├── _ethtool_parse()
-│   └── _filter_list()
+│   └── _ethtool_extract_value()
 ├── CPU Mask 计算
 │   ├── generate_cpus_mask()      # 支持 bash/bc/python3/calc fallback
 │   └── format_cpumask()
@@ -760,7 +759,20 @@ diff before.txt after.txt
 
 ## 许可证
 
-请根据项目实际情况添加许可证信息。
+MIT License
+
+Copyright (c) 2026 Network Optimization Project
+
+特此免费授予任何获得本软件及相关文档文件（"软件"）副本的人不受限制地处置该软件的权利，
+包括但不限于使用、复制、修改、合并、发布、分发、再许可和/或销售该软件副本的权利，
+以及允许向其提供软件的人这样做，但须符合以下条件：
+
+上述版权声明和本许可声明应包含在该软件的所有副本或主要部分中。
+
+本软件按"原样"提供，不提供任何形式的明示或暗示担保，包括但不限于适销性、
+特定用途适用性和非侵权性的担保。在任何情况下，作者或版权持有人均不对任何索赔、
+损害或其他责任负责，无论是在合同诉讼、侵权行为还是其他方面，
+由软件或软件的使用或其他交易引起、产生或与之相关。
 
 ## 贡献
 

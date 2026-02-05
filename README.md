@@ -342,11 +342,11 @@ sudo nano /etc/systemd/network/10-eth.link
 MACAddress=xx:xx:xx:xx:xx:xx
 
 [Link]
-# Set Ringbuffer size (systemd v248+)
+# Set Ringbuffer size (systemd v246+)
 RxBufferSize=max
 TxBufferSize=max
 
-# Set queue numbers to maximum (systemd v248+)
+# Set queue numbers to maximum (systemd v246+)
 RxChannels=max
 TxChannels=max
 CombinedChannels=max
@@ -371,7 +371,7 @@ set_ethernet_rps_to_optimum <nic_name>
 set_ethernet_xps_to_optimum <nic_name>
 
 # Queue number optimization
-set_ethernet_queues_to_optimum <nic_name>
+set_ethernet_queue_to_optimum <nic_name>
 
 # Ringbuffer optimization
 set_ethernet_ringbuffer_to_optimum <nic_name>
@@ -692,10 +692,6 @@ This script uses a modular design with the following characteristics:
    - Sourceable as library
    - >64 CPU mask calculation support
    - 10-second delay for bonding scenarios
-   - systemd detection logic
-   - is_sourced behavior
-   - >64 CPU mask calculation
-   - 10-second delay (bonding scenario)
 
 ## Developer Notes
 
@@ -711,8 +707,7 @@ linux_ethernet_optimization.sh
 ├── Utility functions
 │   ├── _sysfs_read()
 │   ├── _sysfs_write()
-│   ├── _ethtool_parse()
-│   └── _filter_list()
+│   └── _ethtool_extract_value()
 ├── CPU Mask calculation
 │   ├── generate_cpus_mask()      # supports bash/bc/python3/calc fallback
 │   └── format_cpumask()
@@ -764,7 +759,27 @@ diff before.txt after.txt
 
 ## License
 
-Please add license information based on your project requirements.
+MIT License
+
+Copyright (c) 2026 Network Optimization Project
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Contributing
 

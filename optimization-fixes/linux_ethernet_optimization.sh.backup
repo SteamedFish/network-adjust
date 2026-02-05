@@ -19,7 +19,7 @@ shopt -s extglob
 
 # dependencies: ethtool, lspci, bash version >=4, grep, GNU sed column
 # optional: calc, bc, or python3 (needed only for systems with >64 CPUs)
-check_script_requirements() {
+check_script_requrements() {
 	for command in ethtool lspci grep sed column; do
 		if [ -z "$(command -v "${command}")" ]; then
 			echo "ERROR: you need ${command} command to run the script" >&2
@@ -46,9 +46,6 @@ check_script_requirements() {
 	return 0
 }
 
-# Backward compatibility alias
-check_script_requrements() { check_script_requirements "$@"; }
-
 check_root() {
 	test ${EUID} -eq 0
 }
@@ -68,9 +65,8 @@ run_by_systemd() {
 	[ -n "$INVOCATION_ID" ] || [ -n "$SYSTEMD_EXEC_PID" ] || [ -n "$LAUNCHED_BY_SYSTEMD" ]
 }
 
-# if the script is sourced by other scripts, or executed directly
-# NOTE: this function doesn't support zsh
-# This detection method relies on bash-specific behavior of $0
+# if the script is sourced by other scirpts, or executed directly
+# NOTE: this function don't support zsh
 is_sourced() {
 	case ${0##*/} in
 	dash | -dash | bash | -bash | ksh | -ksh | sh | -sh)
@@ -88,12 +84,12 @@ confirm_and_run() {
 	local REPLY
 	local DO_ACTION
 
-	if [ "${dry_run}" = "true" ]; then
+	if "${dry_run}"; then
 		DO_ACTION=false
-	elif [ "${assume_yes}" = "true" ]; then
+	elif "${assume_yes}"; then
 		DO_ACTION=true
 	else
-		read -p "Perform Optimization[yn]: " -n 1 -r </dev/tty
+		read -p "Preform Optimization[yn]: " -n 1 -r <&1
 		echo
 		if [[ "$REPLY" =~ ^[Yy] ]]; then
 			DO_ACTION=true
@@ -102,7 +98,7 @@ confirm_and_run() {
 		fi
 	fi
 
-	if [ "${DO_ACTION}" = "true" ]; then
+	if ${DO_ACTION}; then
 		if "$@"; then
 			:
 			# echo "Finished Optimization"
@@ -228,7 +224,7 @@ get_ethernet_hardware_queues_number() {
 	case "${INFO}" in
 	"RX" | "TX" | "Other" | "Combined") ;;
 	*)
-		echo "Unrecognized INFO ${INFO}" >&2
+		echo "Unregignized INFO ${INFO}" >&2
 		return 1
 		;;
 	esac
@@ -253,7 +249,7 @@ set_ethernet_hardware_queues_number() {
 		return $?
 		;;
 	*)
-		echo "Unrecognized INFO ${INFO}" >&2
+		echo "Unregignized INFO ${INFO}" >&2
 		return 1
 		;;
 	esac
@@ -273,7 +269,7 @@ get_ethernet_hardware_ringbuffer() {
 	case "${INFO}" in
 	"RX" | "TX") ;;
 	*)
-		echo "Unrecognized INFO ${INFO}" >&2
+		echo "Unregignized INFO ${INFO}" >&2
 		return 1
 		;;
 	esac
@@ -281,14 +277,6 @@ get_ethernet_hardware_ringbuffer() {
 	_ethtool_extract_value "${ETH}" "${INFO}" "${TYPE}" "-g"
 }
 
-# Parse ethtool output and extract specific value
-# ASSUMPTIONS:
-#   - ethtool output contains exact strings "Pre-set maximums:" and "Current hardware settings:"
-#   - INFO field format: "<INFO>:    <value>"
-# KNOWN FAILURES:
-#   - Different NIC firmware may change output format
-#   - Older ethtool versions may not support -l/-g flags
-# FALLBACK: Returns empty string if parsing fails
 _ethtool_extract_value() {
 	local ETH=$1
 	local INFO=$2
@@ -310,7 +298,7 @@ _ethtool_extract_value() {
 		stop_string="end_of_the_file_not_exist"
 		;;
 	*)
-		echo "Unrecognized TYPE ${TYPE}" >&2
+		echo "Unregignized TYPE ${TYPE}" >&2
 		return 1
 		;;
 	esac
@@ -320,7 +308,7 @@ _ethtool_extract_value() {
 			started=true
 		elif [ "$line" = "${stop_string}" ]; then
 			return
-		elif [ "${started}" = "true" ] && [[ $line =~ ^${INFO}:[[:space:]]* ]]; then
+		elif ${started} && [[ $line =~ ${INFO}:* ]]; then
 			echo -n "$line" | grep "${INFO}" | cut -d : -f 2 | xargs
 			# There should be only one
 			return
@@ -345,33 +333,16 @@ set_ethernet_hardware_ringbuffer() {
 		return $?
 		;;
 	*)
-		echo "Unrecognized INFO ${INFO}" >&2
+		echo "Unregignized INFO ${INFO}" >&2
 		return 1
 		;;
 	esac
 
 }
 
-# bignum_calc - Arbitrary precision calculator with multiple backend fallback
-#
-# USAGE: bignum_calc <mode> <expression>
-#
-# PARAMETERS:
-#   mode        Output format: "hex", "bin", "oct", "default" (decimal)
-#   expression  Math expression (supports: +, -, *, /, ^, parentheses)
-#
-# RETURNS:
-#   Calculation result in specified format
-#
-# BACKENDS (fallback order):
-#   1. bash (CPU ≤ 64 cores only)
-#   2. bc (recommended for > 64 cores)
-#   3. python3 (fallback)
-#   4. calc (last resort)
-#
-# EXAMPLE:
-#   bignum_calc hex "2 ^ 128 - 1"
-#   # Output: ffffffffffffffffffffffffffffffff
+# Arbitrary precision calculator with multiple backend fallback.
+# Bash can only handle integers up to 64-bit, so for >64 CPU masks
+# we need external tools. Fallback order: bash -> bc -> python3 -> calc
 bignum_calc() {
 	# mode: bin for base2, oct for base8, default for base10, hex for base 16
 	local mode="${1:-default}"
@@ -478,14 +449,11 @@ _calc_with_python() {
 	local expr=$2
 	local result
 
-	# SECURITY NOTE: Expression comes from internal script logic only
-	# If future modifications allow external input, add validation here
 	result="$(
 		python3 - <<PY
 import sys
-# Expression sanitized by script logic - only arithmetic operators used
 expr = "${expr}".replace('^', '**')
-value = eval(expr, {"__builtins__": {}}, {})
+value = eval(expr, {}, {})
 mode = "${mode}"
 if mode == "hex":
     print(hex(value)[2:])
@@ -547,26 +515,8 @@ generate_cpus_mask_for_all_cpu() {
 	format_cpumask "$(bignum_calc hex "2 ^ ${NR_CPU} - 1")"
 }
 
-# generate_cpus_mask - Generate CPU mask for round-robin queue distribution
-#
-# USAGE: generate_cpus_mask <number> <total>
-#
-# PARAMETERS:
-#   number  Starting queue number (0-based)
-#   total   Total number of queues
-#
-# ALGORITHM:
-#   Distributes queues across CPUs in round-robin fashion.
-#   For queue N, assigns to CPU (N mod NR_CPU), then (N+total mod NR_CPU), etc.
-#
-# RETURNS:
-#   Formatted CPU mask (comma-separated 8-hex-digit groups per cpuset spec)
-#
-# EXAMPLE:
-#   generate_cpus_mask 0 4   # Queue 0 of 4 total
-#   # On 8-CPU system: assigns CPUs 0,4 → mask: 00000011
-#
-# man 7 cpuset, go to FORMAT section for detailed format description
+# generate a cpuset CPU mask based on the current number and total number
+# man 7 cpuset, go or FORMAT section for detailed format description
 generate_cpus_mask() {
 	local number=$1
 	local total=$2
@@ -605,11 +555,11 @@ get_irq_of_ethernet_card() {
 	# NOTE:
 	# The irq name registered to kernel is driver specific and varies from driver to driver
 	# This makes it pretty hard to track which irq belongs to the card by query /proc/irq/*/<irq name>
-	# The method used here seems to be driver irrelevant, but not 100% sure
+	# The methord used here seems to be driver irrelevant, but not 100% sure
 	# Needs more testing for it
 
-	# the legacy irq file in device/irq is usually not used, and not exist in /proc/irq/<number>
-	# we have to check if the irq actually exists
+	# the legacy irq file in device/irq is usaually not used, and not exist in /proc/irq/<number>
+	# we have to check if the irq acutally exists
 
 	# IRQ list from legacy irq + MSI IRQ directory
 	while read -r irq; do
@@ -618,11 +568,8 @@ get_irq_of_ethernet_card() {
 		fi
 	done < <(
 		cat "/sys/class/net/${ETH_NAME}/device/irq" 2>/dev/null
-		# Iterate over MSI IRQ directory (avoid ls parsing anti-pattern)
-		for irq_file in "/sys/class/net/${ETH_NAME}/device/msi_irqs/"*; do
-			[ -e "${irq_file}" ] || continue
-			basename "${irq_file}"
-		done 2>/dev/null
+		# shellcheck disable=SC2011
+		ls -1 "/sys/class/net/${ETH_NAME}/device/msi_irqs/" 2>/dev/null
 	)
 }
 
@@ -689,23 +636,19 @@ get_ethernet_hardware_info() {
 	lspci -s "${PCIADDR}" -vmm
 }
 
-get_vendor_of_ethernet_card() {
+get_vendor_of_ethrnet_card() {
 	# ethernet card names, such as eno1
 	local ETH_NAME=$1
 
 	get_ethernet_hardware_info "${ETH_NAME}" | grep -E '^Vendor:' | cut -d : -f 2 | xargs
 }
 
-get_name_of_ethernet_card() {
+get_name_of_ethrnet_card() {
 	# ethernet card names, such as eno1
 	local ETH_NAME=$1
 
 	get_ethernet_hardware_info "${ETH_NAME}" | grep -E '^Device:' | cut -d : -f 2 | xargs
 }
-
-# Backward compatibility aliases (deprecated, use corrected names above)
-get_vendor_of_ethrnet_card() { get_vendor_of_ethernet_card "$@"; }
-get_name_of_ethrnet_card() { get_name_of_ethernet_card "$@"; }
 
 get_physical_ethernet_card_list() {
 	local ETH_NAME
@@ -773,7 +716,7 @@ get_filtered_ethernet_card_list() {
 		fi
 
 		if [ "${#device_exclude_list[@]}" -gt 0 ]; then
-			devname="$(get_name_of_ethernet_card "${ETH_NAME}")"
+			devname="$(get_name_of_ethrnet_card "${ETH_NAME}")"
 			if _match_substr_ci_in_list "${devname}" "${device_exclude_list[@]}"; then
 				continue
 			fi
@@ -787,7 +730,7 @@ get_filtered_ethernet_card_list() {
 		fi
 
 		if [ "${#vendor_exclude_list[@]}" -gt 0 ]; then
-			vendorname="$(get_vendor_of_ethernet_card "${ETH_NAME}")"
+			vendorname="$(get_vendor_of_ethrnet_card "${ETH_NAME}")"
 			if _match_substr_ci_in_list "${vendorname}" "${vendor_exclude_list[@]}"; then
 				continue
 			fi
@@ -800,7 +743,7 @@ get_filtered_ethernet_card_list() {
 
 		if [ "${#device_include_list[@]}" -gt 0 ]; then
 			if [ -z "${devname}" ]; then
-				devname="$(get_name_of_ethernet_card "${ETH_NAME}")"
+				devname="$(get_name_of_ethrnet_card "${ETH_NAME}")"
 			fi
 			if _match_substr_ci_in_list "${devname}" "${device_include_list[@]}"; then
 				echo "${ETH_NAME}"
@@ -820,7 +763,7 @@ get_filtered_ethernet_card_list() {
 
 		if [ "${#vendor_include_list[@]}" -gt 0 ]; then
 			if [ -z "${vendorname}" ]; then
-				vendorname="$(get_vendor_of_ethernet_card "${ETH_NAME}")"
+				vendorname="$(get_vendor_of_ethrnet_card "${ETH_NAME}")"
 			fi
 			if _match_substr_ci_in_list "${vendorname}" "${vendor_include_list[@]}"; then
 				echo "${ETH_NAME}"
@@ -837,12 +780,6 @@ get_filtered_ethernet_card_list() {
 		fi
 		# in the find we remove all the devices in /sys/class/net that links to virtual device
 	done < <(get_physical_ethernet_card_list)
-}
-
-# Validate if a string is a positive integer
-_is_positive_integer() {
-	local value="$1"
-	[[ "${value}" =~ ^[0-9]+$ ]] && [ "${value}" -gt 0 ]
 }
 
 # Unified RPS/XPS optimization logic
@@ -889,14 +826,14 @@ _optimize_packet_steering() {
 
 		if ! mask_is_equal "${best_mask}" "${current_mask}"; then
 			needs_change=true
-			if [ "${mode}" = "apply" ]; then
+			if [ "${mode}" == "apply" ]; then
 				echo -e "${eth_name} \t ${label} \t\t ${queue_name} \t\t ${current_mask} \t ${best_mask}"
 				"${set_mask_func}" "${queue}" "${best_mask}"
 			fi
 		fi
 	done < <("${get_queues_func}" "${eth_name}")
 
-	if [ "${mode}" = "check" ] && [ "${needs_change}" = "true" ]; then
+	if [ "${mode}" == "check" ] && "${needs_change}"; then
 		return 1
 	fi
 	return 0
@@ -934,7 +871,7 @@ _optimize_rfs() {
 
 		if [ "${current_rfs}" != "${best_rfs}" ]; then
 			needs_change=true
-			if [ "${mode}" = "apply" ]; then
+			if [ "${mode}" == "apply" ]; then
 				echo -e "${eth_name} \t RFS \t\t ${queue_name} \t\t ${current_rfs} \t ${best_rfs}"
 				set_rfs_for_queue "${queue}" "${best_rfs}"
 			fi
@@ -945,13 +882,13 @@ _optimize_rfs() {
 	current_rfs_flow="$(get_rfs_flow_entries)"
 	if [ "${current_rfs_flow}" -ne 0 ]; then
 		needs_change=true
-		if [ "${mode}" = "apply" ]; then
+		if [ "${mode}" == "apply" ]; then
 			echo -e "N/A \t RFS-FLOW \t -- \t\t ${current_rfs_flow} \t 0"
 			set_rfs_flow_entries 0
 		fi
 	fi
 
-	if [ "${mode}" = "check" ] && [ "${needs_change}" = "true" ]; then
+	if [ "${mode}" == "check" ] && "${needs_change}"; then
 		return 1
 	fi
 	return 0
@@ -980,18 +917,16 @@ _optimize_ringbuffer() {
 			continue
 		fi
 
-		if _is_positive_integer "${current_ringbuffer}" && _is_positive_integer "${max_ringbuffer}"; then
-			if [ "${max_ringbuffer}" -gt "${current_ringbuffer}" ]; then
-				needs_change=true
-				if [ "${mode}" = "apply" ]; then
-					echo -e "${eth_name} \t RINGBUFFER \t ${INFO} \t\t ${current_ringbuffer} \t ${max_ringbuffer}"
-					set_ethernet_hardware_ringbuffer "${eth_name}" "${INFO}" "${max_ringbuffer}"
-				fi
+		if [ "${max_ringbuffer}" -gt "${current_ringbuffer}" ]; then
+			needs_change=true
+			if [ "${mode}" == "apply" ]; then
+				echo -e "${eth_name} \t RINGBUFFER \t ${INFO} \t\t ${current_ringbuffer} \t ${max_ringbuffer}"
+				set_ethernet_hardware_ringbuffer "${eth_name}" "${INFO}" "${max_ringbuffer}"
 			fi
 		fi
 	done
 
-	if [ "${mode}" = "check" ] && [ "${needs_change}" = "true" ]; then
+	if [ "${mode}" == "check" ] && "${needs_change}"; then
 		return 1
 	fi
 	return 0
@@ -1035,19 +970,17 @@ _optimize_queue() {
 			# This info is not supported by hardware
 			continue
 		fi
-		if _is_positive_integer "${current_queue}" && _is_positive_integer "${max_queue}"; then
-			best_queue=$((max_queue > nr_cpu ? nr_cpu : max_queue))
-			if [ "${best_queue}" -gt "${current_queue}" ]; then
-				needs_change=true
-				if [ "${mode}" = "apply" ]; then
-					echo -e "${eth_name} \t QUEUE \t\t ${info} \t\t ${current_queue} \t ${best_queue}"
-					set_ethernet_hardware_queues_number "${eth_name}" "${info}" "${best_queue}"
-				fi
+		best_queue=$((max_queue > nr_cpu ? nr_cpu : max_queue))
+		if [ "${best_queue}" -gt "${current_queue}" ]; then
+			needs_change=true
+			if [ "${mode}" == "apply" ]; then
+				echo -e "${eth_name} \t QUEUE \t\t ${info} \t\t ${current_queue} \t ${best_queue}"
+				set_ethernet_hardware_queues_number "${eth_name}" "${info}" "${best_queue}"
 			fi
 		fi
 	done
 
-	if [ "${mode}" = "check" ] && [ "${needs_change}" = "true" ]; then
+	if [ "${mode}" == "check" ] && "${needs_change}"; then
 		return 1
 	fi
 	return 0
@@ -1083,7 +1016,7 @@ _optimize_irq_affinity() {
 
 			if ! mask_is_equal "${best_mask}" "${current_mask}"; then
 				needs_change=true
-				if [ "${mode}" = "apply" ]; then
+				if [ "${mode}" == "apply" ]; then
 					echo -e "${eth_name} \t IRQ \t\t irq-${irq}-queue-${queue} \t ${current_mask} \t ${best_mask}"
 					set_irq_smp_affinity "${irq}" "${best_mask}"
 				fi
@@ -1091,7 +1024,7 @@ _optimize_irq_affinity() {
 		done < <(get_queue_from_irq "${irq}")
 	done
 
-	if [ "${mode}" = "check" ] && [ "${needs_change}" = "true" ]; then
+	if [ "${mode}" == "check" ] && "${needs_change}"; then
 		return 1
 	fi
 	return 0
@@ -1173,7 +1106,7 @@ Examples:
     # Optimize all the ethernet cards in the system, do all the modifications without any confirmation
     $0 -y
 
-    # Optimize all the ethernet cards in the system, only show the modifications without actually do modifications
+    # Optimize all the ethernet cards in the system, only show the modifications without actually do modificatioons
     $0 -n
 
     # Optimize only intel and broadcom ethernet cards, but don't optimize cards with i40e driver
@@ -1198,7 +1131,7 @@ if ! check_root; then
 	exit 1
 fi
 
-if ! check_script_requirements; then
+if ! check_script_requrements; then
 	exit 1
 fi
 
@@ -1389,21 +1322,22 @@ _run_action_apply() {
 		echo
 	done < <(get_filtered_ethernet_card_list)
 
-	if [ "${optimized}" = "true" ]; then
-		# All already optimized, exit early
+	if "${optimized}"; then
+		# exit from subshell won't work
+		kill $$ 2>&1 >/dev/null
 		exit 0
 	fi
 ) | column -t
 
-if [ "${dry_run}" = "true" ]; then
+if "${dry_run}"; then
 	exit 1
 fi
 
 echo
 echo
 
-if [ "${assume_yes}" != "true" ]; then
-	read -p "Perform all optimizations[yn]: " -n 1 -r </dev/tty
+if ! "${assume_yes}"; then
+	read -p "Preform all optimizations[yn]: " -n 1 -r <&1
 	echo
 	if [[ "$REPLY" =~ ^[Yy] ]]; then
 		:
@@ -1427,7 +1361,7 @@ export assume_yes=true
 		echo
 		echo
 
-		if ! (run_by_systemd || [ "${dry_run}" = "true" ]); then
+		if ! (run_by_systemd || "${dry_run}"); then
 			# executed by user instead of by systemd during boot process
 			# wait for the device to finish resetting, before perform the next card
 			# to avoid both cards in bonding device being resetting at the same time,
