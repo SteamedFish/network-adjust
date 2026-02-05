@@ -1,5 +1,8 @@
 # Linux Ethernet Performance Optimization Script
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-SteamedFish%2Fnetwork--adjust-blue?logo=github)](https://github.com/SteamedFish/network-adjust)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A powerful Bash script for optimizing Linux physical network card performance parameters, significantly improving network performance in high-throughput environments.
 
 > ⚠️ **IMPORTANT: This script is designed ONLY for maximizing throughput in high-throughput network environments. It is NOT suitable for latency-sensitive scenarios (e.g., financial trading, real-time gaming, VoIP). The optimizations may actually INCREASE latency due to larger buffers and batch processing.**

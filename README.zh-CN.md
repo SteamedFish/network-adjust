@@ -1,5 +1,8 @@
 # Linux 网卡性能优化脚本
 
+[![GitHub 仓库](https://img.shields.io/badge/GitHub-SteamedFish%2Fnetwork--adjust-blue?logo=github)](https://github.com/SteamedFish/network-adjust)
+[![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一个强大的 Bash 脚本，用于优化 Linux 物理网卡的性能参数，显著提升高吞吐量环境下的网络性能。
 
 > ⚠️ **重要提示：本脚本仅适用于高吞吐量网络环境下的吞吐量优化，不适用于时延敏感场景（如金融交易、实时游戏、VoIP）。由于使用了更大的缓冲区和批量处理，这些优化实际上可能会增加延迟。**
