@@ -98,34 +98,37 @@
 - **文件**: `linux_ethernet_optimization.sh`
 - **位置**: 第639、646行及所有调用处
 - **问题**: `get_vendor_of_ethrnet_card` 和 `get_name_of_ethrnet_card` 拼写错误
-- **修复**: 重命名函数并保留向后兼容的别名
+- **修复**: 重命名函数为正确拼写
   ```bash
-  # 新增正确命名的函数
-  get_vendor_of_ethernet_card() {
-      # ... (原实现)
-  }
-  get_name_of_ethernet_card() {
-      # ... (原实现)
+  # 原错误命名
+  get_vendor_of_ethrnet_card() {
+      # ... 实现
   }
   
-  # 保留旧名作为别名（向后兼容）
-  get_vendor_of_ethrnet_card() { get_vendor_of_ethernet_card "$@"; }
-  get_name_of_ethrnet_card() { get_name_of_ethernet_card "$@"; }
+  # 修复后的正确命名
+  get_vendor_of_ethernet_card() {
+      # ... 实现
+  }
+  get_name_of_ethernet_card() {
+      # ... 实现
+  }
   ```
-- **影响**: 提高代码专业性，同时保持向后兼容
+- **影响**: 提高代码专业性，函数名称更准确
+- **注意**: 这是破坏性更改，旧函数名不再可用
 
 #### 6. 函数名拼写错误: `requrements` → `requirements`
 - **文件**: `linux_ethernet_optimization.sh`
 - **位置**: 第22、1134行
 - **问题**: `check_script_requrements` 拼写错误
-- **修复**: 重命名并保留向后兼容别名
+- **修复**: 重命名为正确拼写
   ```bash
+  # 修复后的正确命名
   check_script_requirements() {
-      # ... (原实现)
+      # ... 实现
   }
-  check_script_requrements() { check_script_requirements "$@"; }  # 向后兼容
   ```
 - **影响**: 修正函数命名，保持专业性
+- **注意**: 这是破坏性更改，旧函数名不再可用
 
 ---
 
@@ -454,12 +457,13 @@
 4. **函数调用测试**
    ```bash
    source ./linux_ethernet_optimization.sh
-   check_script_requirements  # 新名称
-   check_script_requrements   # 旧名称（向后兼容）
-   # 预期：两者都能正常工作
+   check_script_requirements  # 正确名称
+   get_vendor_of_ethernet_card eth0  # 正确名称
+   get_name_of_ethernet_card eth0    # 正确名称
+   # 预期：所有函数正常工作
    ```
 
-5. **大于64核心场景测试**（如果环境允许）
+5. **大于64核心场景测试**(如果环境允许)
    ```bash
    # 测试 bignum_calc 各后端
    source ./linux_ethernet_optimization.sh
@@ -471,12 +475,32 @@
 
 ---
 
-## 向后兼容性
+## 破坏性更改说明
 
-所有函数重命名都保留了旧名称的别名，确保：
-- 现有脚本可以继续使用旧函数名
-- 新代码推荐使用新函数名
-- 文档已更新为新函数名
+**2026-02-05 更新**: 为提高代码质量，已移除所有向后兼容别名：
+
+### 移除的别名函数
+1. `check_script_requrements()` - 请使用 `check_script_requirements()`
+2. `get_vendor_of_ethrnet_card()` - 请使用 `get_vendor_of_ethernet_card()`
+3. `get_name_of_ethrnet_card()` - 请使用 `get_name_of_ethernet_card()`
+
+### 影响范围
+- **直接执行脚本**: 无影响(内部已全部更新)
+- **source 后调用函数**: 必须使用新函数名
+- **外部脚本依赖**: 需要更新函数调用
+
+### 迁移指南
+如果您的脚本使用了旧函数名，请按以下方式更新：
+
+```bash
+# 旧代码 (已不可用)
+check_script_requrements
+get_vendor_of_ethrnet_card eth0
+
+# 新代码 (请更新为此)
+check_script_requirements
+get_vendor_of_ethernet_card eth0
+```
 
 ---
 

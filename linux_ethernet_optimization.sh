@@ -46,9 +46,6 @@ check_script_requirements() {
 	return 0
 }
 
-# Backward compatibility alias
-check_script_requrements() { check_script_requirements "$@"; }
-
 check_root() {
 	test ${EUID} -eq 0
 }
@@ -702,10 +699,6 @@ get_name_of_ethernet_card() {
 
 	get_ethernet_hardware_info "${ETH_NAME}" | grep -E '^Device:' | cut -d : -f 2 | xargs
 }
-
-# Backward compatibility aliases (deprecated, use corrected names above)
-get_vendor_of_ethrnet_card() { get_vendor_of_ethernet_card "$@"; }
-get_name_of_ethrnet_card() { get_name_of_ethernet_card "$@"; }
 
 get_physical_ethernet_card_list() {
 	local ETH_NAME

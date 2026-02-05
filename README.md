@@ -701,7 +701,7 @@ This script uses a modular design with the following characteristics:
 linux_ethernet_optimization.sh
 ├── Core logic protection comments
 ├── Dependency check functions
-│   ├── check_script_requrements()
+│   ├── check_script_requirements()
 │   ├── check_root()
 │   └── run_by_systemd()
 ├── Utility functions

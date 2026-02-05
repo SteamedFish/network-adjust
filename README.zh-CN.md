@@ -701,7 +701,7 @@ get_ethernet_kernel_queues_number() {
 linux_ethernet_optimization.sh
 ├── 核心逻辑保护注释
 ├── 依赖检查函数
-│   ├── check_script_requrements()
+│   ├── check_script_requirements()
 │   ├── check_root()
 │   └── run_by_systemd()
 ├── 基础工具函数

@@ -88,7 +88,7 @@ network-adjust/
 
 ## DEPENDENCIES
 
-**Hard requirements** (checked by `check_script_requrements`):
+**Hard requirements** (checked by `check_script_requirements`):
 - `ethtool` - NIC configuration tool
 - `lspci` - PCI device lister
 - `grep`, `sed` (GNU version), `column` - Text processing
@@ -224,7 +224,7 @@ set_ethernet_rps_to_optimum eth0
 
 ### Code Quality Improvements
 - Fixed 11 typos (5 user-visible): Preform→Perform, modificatioons→modifications, Unregignized→Unrecognized
-- Function name corrections: `ethrnet`→`ethernet`, `requrements`→`requirements` (with backward-compatible aliases)
+- Function name corrections: `ethrnet`→`ethernet`, `requrements`→`requirements`
 - Enhanced documentation for complex algorithms: `bignum_calc`, `generate_cpus_mask`, `_ethtool_extract_value`
 - Improved regex patterns and validation functions
 
@@ -236,7 +236,6 @@ set_ethernet_rps_to_optimum eth0
 ### Validation
 - ✅ Bash syntax validation: `bash -n` passed
 - ✅ LSP diagnostics: Zero errors/warnings/hints
-- ✅ Backward compatibility: All old function names aliased
 - ⏳ Functional testing: Pending deployment to actual Linux host
 
 For complete details, see:
