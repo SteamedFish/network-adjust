@@ -180,11 +180,11 @@ yum install ethtool pciutils bash grep sed coreutils
 
 ```bash
 # Method 1: Clone repository
-git clone <repository-url>
+git clone https://github.com/SteamedFish/network-adjust.git
 cd network-adjust
 
 # Method 2: Direct download single file
-wget https://raw.githubusercontent.com/<user>/<repo>/main/linux_ethernet_optimization.sh
+wget https://raw.githubusercontent.com/SteamedFish/network-adjust/master/linux_ethernet_optimization.sh
 chmod +x linux_ethernet_optimization.sh
 ```
 
