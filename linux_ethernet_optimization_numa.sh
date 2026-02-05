@@ -1342,7 +1342,7 @@ ETH OS NAME:
 
 DEVICE NAME:
     Device name will be partially matched, case insensitive
-    You can get device information in TOC system, hardware page
+    You can get device information by lspci | grep Ethernet
     Example of device name: X722
 
 DRIVER NAME:
@@ -1352,7 +1352,7 @@ DRIVER NAME:
 
 VENDOR NAME:
     Vendor name will be partially matched, case insensitive
-    You can get vendor information in TOC system, hardware page
+    You can get vendor information by lspci | grep Ethernet
     Example of vendor name: Intel
 
 Examples:
