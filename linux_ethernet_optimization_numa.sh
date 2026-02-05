@@ -974,12 +974,8 @@ _is_positive_integer() {
 # mode: "check" (return 0/1), "apply" (output + modify)
 # direction: "rx" for RPS, "tx" for XPS
 #
-# LIMITATION: This function does NOT consider NUMA topology.
-# On multi-socket NUMA systems, this may distribute packets to CPUs on remote NUMA nodes,
-# causing cross-node memory access with 2-3× latency penalty.
-# Optimal: RPS/XPS should only use CPUs local to the NIC's NUMA node.
-# Check NIC's NUMA node: cat /sys/class/net/<dev>/device/numa_node
-# Get local CPUs: cat /sys/devices/system/node/node<N>/cpulist
+# NUMA-AWARE: This function detects NIC's NUMA node and binds RPS/XPS to local CPUs only.
+# Falls back to all CPUs if NUMA detection fails.
 _optimize_packet_steering() {
 	local eth_name=$1
 	local mode=$2
@@ -1216,12 +1212,8 @@ set_ethernet_queue_to_optimum() {
 # Strategy: round-robin bind each queue to different CPU
 # mode: "check" = return 1 if needs optimization, "apply" = perform optimization
 #
-# LIMITATION: This function does NOT consider NUMA topology.
-# On multi-socket NUMA systems, this may assign IRQs to CPUs on remote NUMA nodes,
-# causing cross-node memory access with 2-3× latency penalty.
-# Optimal: IRQs should be bound to CPUs local to the NIC's NUMA node.
-# Check NIC's NUMA node: cat /sys/class/net/<dev>/device/numa_node
-# Get local CPUs: cat /sys/devices/system/node/node<N>/cpulist
+# NUMA-AWARE: This function detects NIC's NUMA node and binds IRQs to local CPUs only.
+# Falls back to all CPUs if NUMA detection fails.
 _optimize_irq_affinity() {
 	local eth_name=$1
 	local mode=$2
