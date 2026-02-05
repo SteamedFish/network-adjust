@@ -1,0 +1,121 @@
+========================================
+Calculator Tools Consistency Test Suite
+========================================
+
+[0;32m[INFO][0m Checking available tools...
+[0;32m[INFO][0m   ✓ bc is available
+[0;32m[INFO][0m   ✓ python3 is available
+[0;32m[INFO][0m   ✓ calc is available
+
+[0;32m[INFO][0m === Phase 1: Testing Individual Implementations ===
+
+[0;32m[INFO][0m Testing bash implementation...
+[0;31m[ERROR][0m Test #20 FAILED [bash]
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 63
+[0;31m[ERROR][0m   Expected: 9223372036854775808
+[0;31m[ERROR][0m   Got:      -9223372036854775808
+[0;31m[ERROR][0m Test #21 FAILED [bash]
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 64
+[0;31m[ERROR][0m   Expected: 18446744073709551616
+[0;31m[ERROR][0m   Got:      0
+[0;31m[ERROR][0m Test #22 FAILED [bash]
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 64 - 1
+[0;31m[ERROR][0m   Expected: 18446744073709551615
+[0;31m[ERROR][0m   Got:      -1
+[0;31m[ERROR][0m Test #23 FAILED [bash]
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 128 - 1
+[0;31m[ERROR][0m   Expected: 340282366920938463463374607431768211455
+[0;31m[ERROR][0m   Got:      -1
+[0;31m[ERROR][0m Test #48 FAILED [bash]
+[0;31m[ERROR][0m   Mode: hex, Expr: 2 ^ 64
+[0;31m[ERROR][0m   Expected: 10000000000000000
+[0;31m[ERROR][0m   Got:      0
+[0;31m[ERROR][0m Test #50 FAILED [bash]
+[0;31m[ERROR][0m   Mode: hex, Expr: 2 ^ 128 - 1
+[0;31m[ERROR][0m   Tool failed with exit code 1
+[0;31m[ERROR][0m   Output: 
+[0;31m[ERROR][0m Test #75 FAILED [bash]
+[0;31m[ERROR][0m   Mode: oct, Expr: 2 ^ 64 - 1
+[0;31m[ERROR][0m   Tool failed with exit code 1
+[0;31m[ERROR][0m   Output: 
+[0;31m[ERROR][0m Test #99 FAILED [bash]
+[0;31m[ERROR][0m   Mode: bin, Expr: 2 ^ 64 - 1
+[0;31m[ERROR][0m   Tool failed with exit code 1
+[0;31m[ERROR][0m   Output: 
+
+[0;32m[INFO][0m Testing bc implementation...
+
+[0;32m[INFO][0m Testing python3 implementation...
+
+[0;32m[INFO][0m Testing calc implementation...
+
+[0;32m[INFO][0m === Phase 2: Cross-Tool Consistency Tests ===
+
+[0;32m[INFO][0m Testing consistency across all available tools...
+[0;31m[ERROR][0m Consistency Test #424 FAILED
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 63
+[0;31m[ERROR][0m   Results differ between tools:
+[0;31m[ERROR][0m     bash: -9223372036854775808
+[0;31m[ERROR][0m     bc: 9223372036854775808
+[0;31m[ERROR][0m     python3: 9223372036854775808
+[0;31m[ERROR][0m     calc: 9223372036854775808
+[0;31m[ERROR][0m Consistency Test #425 FAILED
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 64
+[0;31m[ERROR][0m   Results differ between tools:
+[0;31m[ERROR][0m     bash: 0
+[0;31m[ERROR][0m     bc: 18446744073709551616
+[0;31m[ERROR][0m     python3: 18446744073709551616
+[0;31m[ERROR][0m     calc: 18446744073709551616
+[0;31m[ERROR][0m Consistency Test #426 FAILED
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 64 - 1
+[0;31m[ERROR][0m   Results differ between tools:
+[0;31m[ERROR][0m     bash: -1
+[0;31m[ERROR][0m     bc: 18446744073709551615
+[0;31m[ERROR][0m     python3: 18446744073709551615
+[0;31m[ERROR][0m     calc: 18446744073709551615
+[0;31m[ERROR][0m Consistency Test #427 FAILED
+[0;31m[ERROR][0m   Mode: default, Expr: 2 ^ 128 - 1
+[0;31m[ERROR][0m   Results differ between tools:
+[0;31m[ERROR][0m     bash: -1
+[0;31m[ERROR][0m     bc: 340282366920938463463374607431768211455
+[0;31m[ERROR][0m     python3: 340282366920938463463374607431768211455
+[0;31m[ERROR][0m     calc: 340282366920938463463374607431768211455
+[0;31m[ERROR][0m Consistency Test #452 FAILED
+[0;31m[ERROR][0m   Mode: hex, Expr: 2 ^ 64
+[0;31m[ERROR][0m   Results differ between tools:
+[0;31m[ERROR][0m     bash: 0
+[0;31m[ERROR][0m     bc: 10000000000000000
+[0;31m[ERROR][0m     python3: 10000000000000000
+[0;31m[ERROR][0m     calc: 10000000000000000
+
+[0;32m[INFO][0m === Phase 3: Special Edge Cases ===
+
+[0;32m[INFO][0m Testing bash special case: 2^64-1 in hex mode...
+[0;32m[INFO][0m   ✓ bash 2^64-1 optimization works correctly
+
+[0;32m[INFO][0m Testing arbitrary precision (256-bit numbers)...
+[0;32m[INFO][0m   ✓ bc handles 256-bit correctly
+[0;32m[INFO][0m   ✓ python3 handles 256-bit correctly
+[0;32m[INFO][0m   ✓ calc handles 256-bit correctly
+
+[0;32m[INFO][0m === Phase 4: Testing bignum_calc() Fallback Logic ===
+
+[0;32m[INFO][0m   ✓ Calculator works correctly for 1 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 4 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 8 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 16 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 32 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 64 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 128 CPUs
+[0;32m[INFO][0m   ✓ Calculator works correctly for 256 CPUs
+
+========================================
+Test Summary
+========================================
+Total tests:  517
+Passed:       \033[0;32m504\033[0m
+Failed:       \033[0;31m13\033[0m
+
+[0;31m[ERROR][0m Some tests failed! ✗
+
+Please review the error messages above.
