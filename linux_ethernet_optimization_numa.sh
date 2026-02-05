@@ -841,15 +841,12 @@ get_physical_ethernet_card_list() {
 	# and also exclude virtio and other virtualization drivers
 
 	while read -r ETH_NAME; do
-		DRIVER_PATH="/sys/class/net/${ETH_NAME}/device/driver"
-		if [ -L "${DRIVER_PATH}" ]; then
-			DRIVER_NAME="$(basename "$(readlink "${DRIVER_PATH}")")"
-			case "${DRIVER_NAME}" in
-			virtio_net | veth | vmxnet3 | xen-netfront | hv_netvsc)
-				continue
-				;;
-			esac
-		fi
+		DRIVER_NAME="$(get_driver_of_ethernet_card "${ETH_NAME}")"
+		case "${DRIVER_NAME}" in
+		virtio_net | veth | vmxnet3 | xen-netfront | hv_netvsc)
+			continue
+			;;
+		esac
 		echo "${ETH_NAME}"
 	done < <(find /sys/class/net -mindepth 1 -maxdepth 1 -lname '*/virtual/*' -prune -o -type l -printf '%f\n')
 }
