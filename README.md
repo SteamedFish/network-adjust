@@ -70,6 +70,8 @@ A powerful Bash script for optimizing Linux physical network card performance pa
 - Avoid interrupt handling bottleneck
 - Improve interrupt response speed
 
+**⚠️ NUMA Limitation**: This script does NOT consider NUMA topology. On multi-socket servers, IRQs may be assigned to CPUs on remote NUMA nodes, causing cross-node memory access and 2-3× latency penalty. For NUMA-aware optimization, manually bind IRQs to CPUs local to the NIC's NUMA node (see "Known Limitations" section).
+
 ### 4. RPS Optimization
 
 **Principle**: Distribute received packets to multiple CPUs at the software level, compensating for insufficient hardware queues.
@@ -575,6 +577,15 @@ sudo ethtool -L eth0 combined <original_queue_count>
    - **Strongly recommended to keep disabled in production**
    - Must thoroughly test before enabling to confirm no hash collisions or firmware bugs
    - See "Features" section for detailed RFS explanation
+
+6. **NUMA Affinity Not Considered** ⚠️
+   - **Critical limitation on multi-socket servers**
+   - Script uses simple round-robin IRQ distribution across ALL CPUs
+   - Does NOT respect NUMA node boundaries
+   - **Impact**: On NUMA systems, IRQs may be assigned to remote CPUs, causing 2-3× latency penalty
+   - **Affected systems**: Multi-socket servers (2+ CPUs), AMD EPYC, Intel Xeon multi-socket
+   - **Workaround**: Manually check NIC's NUMA node (`cat /sys/class/net/eth0/device/numa_node`) and bind IRQs to local CPUs only
+   - **Recommendation**: For NUMA systems, use NUMA-aware tuning tools (e.g., `tuned`, `irqbalance --hintpolicy=subset`)
 
 ### 💡 Best Practices
 

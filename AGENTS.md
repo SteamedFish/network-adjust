@@ -86,6 +86,52 @@ network-adjust/
    - Line 11-14: 6 design decisions marked "DO NOT change behavior"
    - Changing these will break production deployments
 
+## KNOWN LIMITATIONS
+
+### NUMA Affinity Not Considered
+
+**Critical Design Flaw**: The script's IRQ affinity optimization ignores NUMA topology (line 1058-1099).
+
+**Current Behavior**:
+- Uses simple round-robin: `queue % nr_cpu` assigns each queue to a CPU (line 1074)
+- Distributes IRQs across ALL CPUs regardless of NUMA node
+
+**Problem**:
+- Modern servers have multiple NUMA nodes (separate CPU + memory domains)
+- NICs are physically attached to ONE NUMA node via PCIe
+- IRQs assigned to remote NUMA nodes cause cross-node memory access
+- **Performance impact**: 2-3× latency penalty for remote memory access
+
+**Example**:
+```
+Server: 2 NUMA nodes, 32 CPUs (16 per node)
+NIC: Plugged into NUMA node 0
+Current script: Assigns queues to CPU 0,1,2...31 (both nodes)
+Optimal: Should only use CPU 0-15 (local node)
+```
+
+**Workaround**:
+```bash
+# 1. Check NIC's NUMA node
+cat /sys/class/net/eth0/device/numa_node
+
+# 2. Get CPUs on that node
+cat /sys/devices/system/node/node0/cpulist
+
+# 3. Manually bind IRQs to local CPUs only
+echo <local_cpu_mask> > /proc/irq/<irq>/smp_affinity
+```
+
+**Why Not Fixed**:
+- Requires `numactl` or parsing `/sys/devices/system/node/`
+- Complex topology handling (CPU hotplug, memory-only nodes)
+- Original script predates common NUMA awareness
+- Adding this would break the "minimal dependencies" design goal
+
+**Impact**: Severe on NUMA systems (most modern servers). Acceptable on single-node systems.
+
+**Future**: Consider adding `-N` flag for NUMA-aware mode with `numactl` dependency.
+
 ## DEPENDENCIES
 
 **Hard requirements** (checked by `check_script_requirements`):

@@ -1057,6 +1057,13 @@ set_ethernet_queue_to_optimum() {
 # Unified IRQ affinity optimization
 # Strategy: round-robin bind each queue to different CPU
 # mode: "check" = return 1 if needs optimization, "apply" = perform optimization
+#
+# LIMITATION: This function does NOT consider NUMA topology.
+# On multi-socket NUMA systems, this may assign IRQs to CPUs on remote NUMA nodes,
+# causing cross-node memory access with 2-3× latency penalty.
+# Optimal: IRQs should be bound to CPUs local to the NIC's NUMA node.
+# Check NIC's NUMA node: cat /sys/class/net/<dev>/device/numa_node
+# Get local CPUs: cat /sys/devices/system/node/node<N>/cpulist
 _optimize_irq_affinity() {
 	local eth_name=$1
 	local mode=$2

@@ -61,7 +61,7 @@
 
 ### 3. IRQ 亲和性优化 (IRQ Affinity)
 
-**原理**：将网卡的中断请求（IRQ）分散到不同的 CPU 核心，避免单核过载。
+**原理**：将网卡的中断请求（IRQ）分散到不同的 CPU 核心,避免单核过载。
 
 **策略**：轮询分配（round-robin）
 
@@ -69,6 +69,8 @@
 - 均衡 CPU 负载
 - 避免中断处理瓶颈
 - 提升中断响应速度
+
+**⚠️ NUMA 限制**：本脚本**未考虑 NUMA 拓扑结构**。在多路服务器上,IRQ 可能被分配到远程 NUMA 节点的 CPU,导致跨节点内存访问,造成 2-3 倍的延迟惩罚。对于 NUMA 感知优化,需要手动将 IRQ 绑定到网卡所在 NUMA 节点的本地 CPU（详见"已知限制"章节）。
 
 ### 4. RPS 优化 (Receive Packet Steering)
 
@@ -573,8 +575,17 @@ sudo ethtool -L eth0 combined <原始队列数>
 
 5. **RFS 默认禁用**
    - **生产环境强烈建议保持禁用**
-   - 启用前必须充分测试，确认无 hash 碰撞和固件 bug
+   - 启用前必须充分测试,确认无 hash 碰撞和固件 bug
    - 详见"功能特性"章节的 RFS 说明
+
+6. **未考虑 NUMA 亲和性** ⚠️
+   - **多路服务器上的关键限制**
+   - 脚本使用简单的轮询方式将 IRQ 分配到所有 CPU
+   - **不尊重 NUMA 节点边界**
+   - **影响**：在 NUMA 系统上,IRQ 可能被分配到远程 CPU,造成 2-3 倍延迟惩罚
+   - **受影响系统**：多路服务器(2+ CPU),AMD EPYC、Intel Xeon 多路配置
+   - **临时解决方案**：手动检查网卡的 NUMA 节点（`cat /sys/class/net/eth0/device/numa_node`）,仅将 IRQ 绑定到本地 CPU
+   - **推荐方案**：对于 NUMA 系统,使用 NUMA 感知的调优工具（如 `tuned`、`irqbalance --hintpolicy=subset`）
 
 ### 💡 最佳实践
 
